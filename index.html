@@ -1474,7 +1474,9 @@ function renderSavingsCard(){
 
 /* chart */
 function renderChart(){
-  const d=getMonthData(),cats=getCats();
+  const d=getMonthData();
+  // exclude savings category — it lives on the savings card, not the spending chart
+  const cats=getCats().filter(c=>c.id!=='savings'&&c.name.toLowerCase()!=='savings');
   const labels=cats.map(c=>c.name.length>7?c.name.split(' ')[0]:c.name);
   const budgets=cats.map(c=>d.budgets[c.id]||0);
   const spents=cats.map(c=>catSpent(c.id));
