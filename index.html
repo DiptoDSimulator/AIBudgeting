@@ -1319,7 +1319,8 @@ async function saveData(what){
 async function deleteMonthFromFirestore(key){
   try{
     await db._deleteDoc(db._doc(db,'months',key));
-  }catch(e){console.warn('Could not delete month doc',e);}
+    return true;
+  }catch(e){console.warn('Could not delete month doc',e);return false;}
 }
 
 function ensureMonth(key){
@@ -1359,12 +1360,22 @@ function switchMonth(k){if(k===currentMonth)return;currentMonth=k;rebuildMonthDr
 function deleteMonth(k){
   if(Object.keys(appData.months).length<=1){showToast('Cannot delete the only month');return;}
   document.getElementById('deleteModalLabel').textContent=monthLabel(k);
-  document.getElementById('deleteModalConfirm').onclick=()=>{
+  document.getElementById('deleteModalConfirm').onclick=async()=>{
     const label=monthLabel(k);
+    const confirmBtn=document.getElementById('deleteModalConfirm');
+    confirmBtn.disabled=true;
+    confirmBtn.textContent='Deleting...';
+    // delete from Firestore FIRST — confirm it's gone before touching local state
+    const ok=await deleteMonthFromFirestore(k);
+    if(!ok){
+      showToast('Could not delete — check connection');
+      confirmBtn.disabled=false;confirmBtn.textContent='Delete';
+      return;
+    }
     delete appData.months[k];
     if(currentMonth===k)currentMonth=Object.keys(appData.months).sort().reverse()[0];
+    confirmBtn.disabled=false;confirmBtn.textContent='Delete';
     closeModal('deleteModal');closeDropdown();rebuildMonthDropdown();render();
-    deleteMonthFromFirestore(k); // delete the month's own doc
     logActivity('del',`deleted month: ${label}`);
     showToast(label+' removed');
   };
