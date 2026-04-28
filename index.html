@@ -344,7 +344,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ── RESPONSIVE ── */
-@media(max-width:900px){.today-panel{display:none;}.main-col{padding:1rem;}}
+@media(max-width:900px){.today-panel{display:none;}.main-col{padding:1rem;}.mobile-today{display:block !important;}}
+@media(min-width:901px){.mobile-today{display:none !important;}}
 @media(max-width:600px){
   .topbar{padding:.7rem 1rem;gap:6px;}
   .logo{font-size:17px;}
@@ -457,6 +458,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         </div>
         <div class="sec-label" style="margin-bottom:8px;">Categories</div>
         <div id="catCards"></div>
+        <!-- Mobile today panel -->
+        <div class="mobile-today" style="display:none;margin-top:1.25rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="sec-label" style="margin-bottom:0;" id="mobileTodayTitle">Today's entries</div>
+            <div style="font-size:11px;color:var(--muted);" id="mobileDatetime"></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1rem;">
+            <div id="mobileTodayList"></div>
+            <div id="mobileTodayTotal"></div>
+          </div>
+        </div>
       </div>
 
       <!-- SET BUDGETS -->
@@ -885,6 +897,7 @@ document.addEventListener('keydown',e=>{
 
 /* init progress */
 document.getElementById('progressBar').style.width=(1/TOTAL*100)+'%';
+window.addEventListener('message',function(e){if(!e.data||e.data.type!=='dc-theme')return;var r=document.documentElement;Object.entries(e.data.vars).forEach(function(p){r.style.setProperty(p[0],p[1]);});if(e.data.vars['--bg'])document.body.style.background=e.data.vars['--bg'];if(e.data.vars['--text'])document.body.style.color=e.data.vars['--text'];});
 </script>
 </body>
 </html>
@@ -1012,7 +1025,10 @@ function startClock(){
   function tick(){
     const now=new Date();
     const opts={weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'};
-    document.getElementById('datetimeChip').textContent=now.toLocaleString('default',opts);
+    const str=now.toLocaleString('default',opts);
+    document.getElementById('datetimeChip').textContent=str;
+    const mDt=document.getElementById('mobileDatetime');
+    if(mDt) mDt.textContent=str;
   }
   tick(); setInterval(tick,30000);
 }
@@ -1045,6 +1061,8 @@ function applyTheme(t){
     root.style.setProperty('--font-display',display);
     root.style.setProperty('--font-body',body);
   }
+  // sync to guide if open
+  if(document.getElementById('guideOverlay')?.classList.contains('open'))setTimeout(()=>sendThemeToGuide(),50);
 }
 function buildThemePanel(){
   const container=document.getElementById('themePresets');
@@ -1337,7 +1355,7 @@ function renderCatCards(){
       <div class="entry-form" id="form-${cat.id}">
         <div class="form-row">
           <input type="text" class="finput" id="desc-${cat.id}" placeholder="What was this for?"/>
-          <input type="number" class="finput amt" id="amt-${cat.id}" placeholder="Amount" min="0" step="any"/>
+          <input type="text" inputmode="decimal" class="finput amt" id="amt-${cat.id}" placeholder="Amount"/>
           <input type="date" class="finput date" id="date-${cat.id}" value="${todayDateVal()}"/>
           <button class="fsub" data-cat="${cat.id}">Add</button>
         </div>
@@ -1368,7 +1386,7 @@ function commitRename(id,newName,nameText,nameInput,editBtn){
 function toggleForm(id){const f=document.getElementById('form-'+id);const open=f.classList.toggle('open');if(open)document.getElementById('desc-'+id).focus();}
 function addEntry(id){
   const dEl=document.getElementById('desc-'+id),aEl=document.getElementById('amt-'+id),dtEl=document.getElementById('date-'+id);
-  const amt=parseFloat(aEl.value);
+  const amt=parseFloat(aEl.value.replace(/,/g,"."));
   if(!amt||amt<=0){showToast('Enter a valid amount');return;}
   const entry={desc:dEl.value.trim()||'Expense',amount:amt,date:dtEl.value||todayDateVal(),ts:Date.now()};
   getMonthData().entries[id].push(entry);
@@ -1406,6 +1424,11 @@ function renderTodayPanel(){
   list.innerHTML=entries.map(e=>`<div class="today-entry"><span class="today-entry-icon">${e.icon}</span><div class="today-entry-body"><div class="today-entry-cat">${e.catName}</div><div class="today-entry-desc">${e.desc}</div></div><span class="today-entry-amt">${fmt(e.amount)}</span></div>`).join('');
   const total=entries.reduce((s,e)=>s+e.amount,0);
   totalRow.innerHTML=`<div class="today-total"><span class="today-total-label">Today's total</span><span class="today-total-val">${fmt(total)}</span></div>`;
+  // mirror to mobile today panel
+  const mList=document.getElementById('mobileTodayList');
+  const mTotal=document.getElementById('mobileTodayTotal');
+  if(mList) mList.innerHTML=list.innerHTML;
+  if(mTotal) mTotal.innerHTML=totalRow.innerHTML;
 }
 
 /* ══════════════════════════════════
@@ -1597,7 +1620,7 @@ async function fetchAISuggestions(customQ=null){
     ?`Here is our budget data: ${JSON.stringify(summary)}. Our total savings so far: ${fmt(totalSaved)}. Question: ${customQ}. Please give a concise, friendly, specific answer in 3-5 sentences.`
     :`Here is our household budget data for a couple: ${JSON.stringify(summary)}. Total cumulative savings: ${fmt(totalSaved)}. Please give us 4-5 specific, actionable, friendly suggestions to improve our financial habits based on this data. Focus on patterns you notice. Format as a short intro sentence then a bullet list. Keep it warm and encouraging — this is a couple tracking together.`;
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})});
     const data=await res.json();
     const text=data.content?.find(b=>b.type==='text')?.text||'No suggestions available.';
     // convert markdown bullet points to HTML
@@ -1611,7 +1634,18 @@ async function fetchAISuggestions(customQ=null){
 /* ══════════════════════════════════
    GUIDE
 ══════════════════════════════════ */
-document.getElementById('guideBtn').addEventListener('click',()=>document.getElementById('guideOverlay').classList.add('open'));
+document.getElementById('guideBtn').addEventListener('click',()=>{
+  document.getElementById('guideOverlay').classList.add('open');
+  setTimeout(()=>sendThemeToGuide(),200);
+});
+function sendThemeToGuide(){
+  const frame=document.getElementById('guideFrame');
+  if(!frame)return;
+  const cs=getComputedStyle(document.documentElement);
+  const vars={};
+  ['--bg','--surface','--surface2','--accent','--accent-dim','--text','--muted','--border','--border-strong','--danger','--warn','--safe'].forEach(v=>{const val=cs.getPropertyValue(v).trim();if(val)vars[v]=val;});
+  frame.contentWindow?.postMessage({type:'dc-theme',vars,font:themeSettings.font||null},'*');
+}
 document.getElementById('guideClose').addEventListener('click',()=>document.getElementById('guideOverlay').classList.remove('open'));
 document.getElementById('guideOverlay').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 
