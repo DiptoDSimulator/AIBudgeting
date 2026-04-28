@@ -149,6 +149,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .erow:last-child{border-bottom:none;}
 .erow.new-flash{animation:flashNew .8s ease;}
 .edate{font-size:10px;color:var(--muted);white-space:nowrap;min-width:40px;}
+.eavatar{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;font-family:var(--font-display);flex-shrink:0;cursor:default;title:attr(data-name);}
 .edesc{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .eamt{font-weight:500;color:var(--text);white-space:nowrap;}
 .edel{cursor:pointer;color:rgba(128,128,128,.3);font-size:15px;line-height:1;transition:color .15s;padding:0 2px;flex-shrink:0;}
@@ -246,7 +247,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 /* ── TODAY PANEL ── */
 .today-panel-title{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
 .today-empty{font-size:12px;color:var(--muted);text-align:center;padding:1.5rem .5rem;line-height:1.8;}
-.today-entry{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);animation:fadeInEntry .3s ease;}
+.today-entry{display:flex;align-items:flex-start;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);animation:fadeInEntry .3s ease;}
 .today-entry:last-child{border-bottom:none;}
 @keyframes fadeInEntry{from{opacity:0;transform:translateX(8px);}to{opacity:1;transform:translateX(0);}}
 .today-entry-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
@@ -343,6 +344,52 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(14px);background:var(--surface2);border:1px solid var(--border-strong);border-radius:99px;padding:8px 18px;font-size:12px;color:var(--text);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:200;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ── USER IDENTITY ── */
+.user-identity-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:400;opacity:0;pointer-events:none;transition:opacity .2s;}
+.user-identity-overlay.open{opacity:1;pointer-events:all;}
+.user-identity-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r);padding:1.75rem;width:min(320px,90vw);text-align:center;transform:translateY(12px);transition:transform .2s;}
+.user-identity-overlay.open .user-identity-modal{transform:translateY(0);}
+.user-avatar-preview{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:700;margin:0 auto 1rem;}
+.user-identity-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:.4rem;}
+.user-identity-sub{font-size:12px;color:var(--muted);margin-bottom:1.25rem;}
+.user-name-input{width:100%;background:var(--surface2);border:1px solid var(--border-strong);border-radius:var(--rs);color:var(--text);font-family:var(--font-display);font-size:15px;font-weight:600;padding:9px 12px;outline:none;text-align:center;margin-bottom:1rem;}
+.user-name-input:focus{border-color:var(--accent);}
+.user-save-btn{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--rs);font-family:var(--font-display);font-size:13px;font-weight:700;color:#0f0f0f;cursor:pointer;}
+
+/* ── ACTIVITY LOG PANEL ── */
+.activity-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border-strong);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;position:relative;}
+.activity-btn:hover{border-color:var(--accent);color:var(--accent);}
+.activity-badge{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);display:none;}
+.activity-badge.show{display:block;}
+.activity-panel{position:fixed;top:0;right:-340px;width:320px;height:100vh;background:var(--surface);border-left:1px solid var(--border-strong);z-index:150;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.4);}
+.activity-panel.open{right:0;}
+.activity-panel-header{padding:1rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.activity-panel-title{font-family:var(--font-display);font-size:14px;font-weight:700;}
+.activity-panel-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.activity-panel-close:hover{color:var(--text);}
+.activity-user-row{padding:.75rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.activity-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;flex-shrink:0;}
+.activity-user-name{font-size:13px;font-weight:600;font-family:var(--font-display);}
+.activity-user-sub{font-size:11px;color:var(--muted);}
+.activity-change-btn{margin-left:auto;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--font-display);font-weight:600;padding:3px 8px;border-radius:99px;border:1px solid var(--border);}
+.activity-change-btn:hover{color:var(--accent);border-color:var(--accent);}
+.activity-list{flex:1;overflow-y:auto;padding:.5rem 0;}
+.activity-item{padding:.65rem 1.1rem;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;}
+.activity-item:last-child{border-bottom:none;}
+.activity-item-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.activity-item-body{flex:1;min-width:0;}
+.activity-item-text{font-size:12px;color:var(--text);line-height:1.45;}
+.activity-item-text strong{font-weight:600;}
+.activity-item-meta{font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:6px;}
+.activity-item-type{font-size:9px;font-weight:700;font-family:var(--font-display);padding:1px 6px;border-radius:99px;letter-spacing:.04em;}
+.activity-item-type.add{background:rgba(200,240,96,.12);color:var(--safe);}
+.activity-item-type.del{background:rgba(255,107,107,.1);color:var(--danger);}
+.activity-item-type.edit{background:rgba(245,166,35,.1);color:var(--warn);}
+.activity-empty{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:12px;line-height:1.8;}
+.activity-overlay-bg{position:fixed;inset:0;z-index:149;display:none;}
+.activity-overlay-bg.open{display:block;}
+@media(max-width:600px){.activity-panel{width:100%;right:-100%;}.activity-panel.open{right:0;}}
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){.today-panel{display:none;}.main-col{padding:1rem;}.mobile-today{display:block !important;}}
 @media(min-width:901px){.mobile-today{display:none !important;}}
@@ -396,6 +443,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <option value="THB">฿ THB</option>
       </select>
       <button class="theme-btn" id="themeBtn" title="Customise theme">🎨</button>
+      <button class="activity-btn" id="activityBtn" title="Activity log">
+        <span>📋</span>
+        <span class="activity-badge" id="activityBadge"></span>
+      </button>
       <button class="guide-btn" id="guideBtn" title="How to use">?</button>
       <div class="month-dropdown" id="monthDropdown">
         <button class="month-curr-btn" id="monthCurrBtn">
@@ -456,10 +507,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
             <canvas id="barChart" role="img" aria-label="Budget vs spent per category"></canvas>
           </div>
         </div>
-        <div class="sec-label" style="margin-bottom:8px;">Categories</div>
-        <div id="catCards"></div>
-        <!-- Mobile today panel -->
-        <div class="mobile-today" style="display:none;margin-top:1.25rem;">
+        <!-- Mobile today panel — sits before categories on mobile -->
+        <div class="mobile-today" style="display:none;margin-bottom:1.25rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div class="sec-label" style="margin-bottom:0;" id="mobileTodayTitle">Today's entries</div>
             <div style="font-size:11px;color:var(--muted);" id="mobileDatetime"></div>
@@ -469,6 +518,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
             <div id="mobileTodayTotal"></div>
           </div>
         </div>
+        <div class="sec-label" style="margin-bottom:8px;">Categories</div>
+        <div id="catCards"></div>
       </div>
 
       <!-- SET BUDGETS -->
@@ -515,6 +566,37 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 <div class="emoji-picker-overlay" id="emojiOverlay">
   <div class="emoji-picker" id="emojiPicker">
     <div class="emoji-grid" id="emojiGrid"></div>
+  </div>
+</div>
+
+<!-- ACTIVITY LOG PANEL -->
+<div class="activity-overlay-bg" id="activityOverlayBg"></div>
+<div class="activity-panel" id="activityPanel">
+  <div class="activity-panel-header">
+    <span class="activity-panel-title">Activity log</span>
+    <button class="activity-panel-close" id="activityClose">×</button>
+  </div>
+  <div class="activity-user-row">
+    <div class="activity-avatar" id="panelUserAvatar"></div>
+    <div>
+      <div class="activity-user-name" id="panelUserName">—</div>
+      <div class="activity-user-sub">Logged in as you</div>
+    </div>
+    <button class="activity-change-btn" id="changeUserBtn">Change</button>
+  </div>
+  <div class="activity-list" id="activityList">
+    <div class="activity-empty">No activity yet.<br>Actions will appear here.</div>
+  </div>
+</div>
+
+<!-- USER IDENTITY MODAL -->
+<div class="user-identity-overlay" id="userIdentityOverlay">
+  <div class="user-identity-modal">
+    <div class="user-avatar-preview" id="identityAvatarPreview"></div>
+    <div class="user-identity-title">Who are you?</div>
+    <div class="user-identity-sub">Enter your name so your partner knows who made each change.</div>
+    <input type="text" class="user-name-input" id="userNameInput" placeholder="Your name" maxlength="20"/>
+    <button class="user-save-btn" id="userSaveBtn">Let's go →</button>
   </div>
 </div>
 
@@ -1119,8 +1201,9 @@ document.getElementById('currencySelect').addEventListener('change',e=>{
    FIREBASE
 ══════════════════════════════════ */
 async function initFirebase(){
+  if(db)return; // already initialised
   const{initializeApp}=await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/+esm');
-  const{getFirestore,doc,getDoc,setDoc}=await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/+esm');
+  const{getFirestore,doc,getDoc,setDoc,collection,getDocs,addDoc,query,orderBy,limit,deleteDoc}=await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/+esm');
   const firebaseConfig={
     apiKey:"AIzaSyDfntwmBB-MC_OQhqLixRaIq7oUglT0FTw",
     authDomain:"dc-budgeting.firebaseapp.com",
@@ -1131,37 +1214,114 @@ async function initFirebase(){
   };
   const app=initializeApp(firebaseConfig);
   db=getFirestore(app);
+  // attach all helpers
   db._doc=doc; db._getDoc=getDoc; db._setDoc=setDoc;
+  db._collection=collection; db._getDocs=getDocs; db._addDoc=addDoc;
+  db._query=query; db._orderBy=orderBy; db._limit=limit; db._deleteDoc=deleteDoc;
 }
+
+/* ── NEW STORAGE LAYOUT ──────────────────────────────────────
+   /shared/meta          → { catNames, catIcons, catOrder }
+   /months/{YYYY-MM}     → { budgets:{}, entries:{} }
+   /activity/{auto-id}   → { type, description, user, color, ts }
+
+   Each month doc is ~8 KB max (60 entries × 130B).
+   Will never hit the 1 MB Firestore document limit.
+   Old single-doc format is auto-migrated on first load.
+─────────────────────────────────────────────────────────────*/
+
 async function loadData(){
   setSyncStatus('loading');
   try{
     await initFirebase();
-    const ref=db._doc(db,'shared',STORAGE_KEY);
-    const snap=await db._getDoc(ref);
-    if(snap.exists()){
-      const p=snap.data().payload;
-      appData=p.months?p:{catNames:{},catIcons:{},catOrder:null,months:p};
+
+    // ── load meta (catNames, catIcons, catOrder) ──
+    const metaSnap=await db._getDoc(db._doc(db,'shared','meta'));
+    if(metaSnap.exists()){
+      const m=metaSnap.data();
+      appData.catNames=m.catNames||{};
+      appData.catIcons=m.catIcons||{};
+      appData.catOrder=m.catOrder||null;
     }
+
+    // ── load all month docs from /months subcollection ──
+    const monthsSnap=await db._getDocs(db._collection(db,'months'));
+    monthsSnap.forEach(d=>{
+      const key=d.id; // e.g. "2026-04"
+      const data=d.data();
+      appData.months[key]={budgets:data.budgets||{},entries:data.entries||{}};
+    });
+
+    // ── migrate old single-doc format if present ──
+    if(!monthsSnap.size){
+      const oldSnap=await db._getDoc(db._doc(db,'shared',STORAGE_KEY));
+      if(oldSnap.exists()){
+        const p=oldSnap.data().payload;
+        const old=p.months?p:p;
+        if(old.catNames)appData.catNames=old.catNames;
+        if(old.catIcons)appData.catIcons=old.catIcons;
+        if(old.catOrder)appData.catOrder=old.catOrder;
+        const oldMonths=old.months||old;
+        // migrate each month to its own doc
+        for(const[k,v] of Object.entries(oldMonths)){
+          if(typeof v==='object'&&v.budgets){
+            appData.months[k]=v;
+            await db._setDoc(db._doc(db,'months',k),v);
+          }
+        }
+        // save meta
+        await db._setDoc(db._doc(db,'shared','meta'),{catNames:appData.catNames,catIcons:appData.catIcons,catOrder:appData.catOrder});
+        showToast('Data migrated to new storage ✓');
+      }
+    }
+
   }catch(e){console.error(e);setSyncStatus('error');showToast('Could not connect — check internet');}
+
   if(!appData.catNames)appData.catNames={};
   if(!appData.catIcons)appData.catIcons={};
+  if(!appData.months)appData.months={};
   ensureMonth(todayKey());
   currentMonth=todayKey();
   setSyncStatus('synced');
+  await loadActivityLog();
   renderQuote();
   rebuildMonthDropdown();
   render();
   renderTodayPanel();
+  initUser();
 }
-async function saveData(){
+
+/* saveData — only writes what changed:
+   - pass monthKey to save just one month doc
+   - pass 'meta' to save catNames/catIcons/catOrder
+   - pass nothing to save current month + meta */
+async function saveData(what){
   setSyncStatus('saving');
   try{
-    const ref=db._doc(db,'shared',STORAGE_KEY);
-    await db._setDoc(ref,{payload:appData});
+    if(!what||what==='month'||what===currentMonth){
+      // save current month doc
+      const d=getMonthData();
+      await db._setDoc(db._doc(db,'months',currentMonth),{budgets:d.budgets,entries:d.entries});
+    }
+    if(!what||what==='meta'){
+      // save meta
+      await db._setDoc(db._doc(db,'shared','meta'),{catNames:appData.catNames,catIcons:appData.catIcons,catOrder:appData.catOrder||null});
+    }
+    if(typeof what==='string'&&what.match(/^\d{4}-\d{2}$/)&&what!==currentMonth){
+      // save a specific other month (e.g. when deleting)
+      const d=appData.months[what];
+      if(d)await db._setDoc(db._doc(db,'months',what),{budgets:d.budgets,entries:d.entries});
+    }
     setSyncStatus('synced');
   }catch(e){setSyncStatus('error');showToast('Could not save — check internet');}
 }
+
+async function deleteMonthFromFirestore(key){
+  try{
+    await db._deleteDoc(db._doc(db,'months',key));
+  }catch(e){console.warn('Could not delete month doc',e);}
+}
+
 function ensureMonth(key){
   if(appData.months[key])return;
   const keys=Object.keys(appData.months).sort();
@@ -1200,10 +1360,13 @@ function deleteMonth(k){
   if(Object.keys(appData.months).length<=1){showToast('Cannot delete the only month');return;}
   document.getElementById('deleteModalLabel').textContent=monthLabel(k);
   document.getElementById('deleteModalConfirm').onclick=()=>{
+    const label=monthLabel(k);
     delete appData.months[k];
     if(currentMonth===k)currentMonth=Object.keys(appData.months).sort().reverse()[0];
-    closeModal('deleteModal');closeDropdown();rebuildMonthDropdown();render();saveData();
-    showToast(monthLabel(k)+' removed');
+    closeModal('deleteModal');closeDropdown();rebuildMonthDropdown();render();
+    deleteMonthFromFirestore(k); // delete the month's own doc
+    logActivity('del',`deleted month: ${label}`);
+    showToast(label+' removed');
   };
   openModal('deleteModal');
 }
@@ -1223,7 +1386,9 @@ function openMonthModal(){
 }
 function confirmNewMonth(){
   const k=document.getElementById('modalSel').value;if(!k)return;
-  ensureMonth(k);currentMonth=k;closeModal('monthModal');rebuildMonthDropdown();render();saveData();
+  ensureMonth(k);currentMonth=k;closeModal('monthModal');rebuildMonthDropdown();render();
+  saveData('month'); // save the new month doc
+  logActivity('add',`added new month: ${monthLabel(k)}`);
   showToast('Added: '+monthLabel(k));
 }
 
@@ -1360,7 +1525,11 @@ function renderCatCards(){
           <button class="fsub" data-cat="${cat.id}">Add</button>
         </div>
       </div>
-      <div class="entries-list">${entries.map((e,i)=>`<div class="erow"><span class="edate">${fmtDate(e.date)}</span><span class="edesc">${e.desc||'—'}</span><span class="eamt">${fmt(e.amount)}</span><span class="edel" data-cat="${cat.id}" data-idx="${i}">×</span></div>`).join('')}</div>`;
+      <div class="entries-list">${entries.map((e,i)=>{
+        const initials=e.user?e.user.slice(0,2).toUpperCase():'';
+        const avatarHtml=e.user?`<span class="eavatar" style="background:${e.userColor||'#888'};color:#0f0f0f;" title="${e.user}">${initials}</span>`:'';
+        return`<div class="erow"><span class="edate">${fmtDate(e.date)}</span>${avatarHtml}<span class="edesc">${e.desc||'—'}</span><span class="eamt">${fmt(e.amount)}</span><span class="edel" data-cat="${cat.id}" data-idx="${i}">×</span></div>`;
+      }).join('')}</div>`;
     el.appendChild(div);
     div.querySelector('.cat-icon-btn').addEventListener('click',()=>openEmojiPicker(cat.id,div.querySelector('.cat-icon-btn')));
     const editBtn=div.querySelector('#edit-btn-'+cat.id),nameText=div.querySelector('#cname-'+cat.id),nameInput=div.querySelector('#cname-input-'+cat.id);
@@ -1388,9 +1557,11 @@ function addEntry(id){
   const dEl=document.getElementById('desc-'+id),aEl=document.getElementById('amt-'+id),dtEl=document.getElementById('date-'+id);
   const amt=parseFloat(aEl.value.replace(/,/g,"."));
   if(!amt||amt<=0){showToast('Enter a valid amount');return;}
-  const entry={desc:dEl.value.trim()||'Expense',amount:amt,date:dtEl.value||todayDateVal(),ts:Date.now()};
+  const entry={desc:dEl.value.trim()||'Expense',amount:amt,date:dtEl.value||todayDateVal(),ts:Date.now(),user:currentUser?.name||null,userColor:userColor(currentUser?.name||'')};
   getMonthData().entries[id].push(entry);
   dEl.value='';aEl.value='';dtEl.value=todayDateVal();
+  const cat=getCats().find(c=>c.id===id);
+  logActivity('add',`added ${fmt(amt)} to ${cat?.icon||''} ${cat?.name||id} — "${entry.desc}"`);
   saveData();render();
   // flash the card
   const card=document.getElementById('ccard-'+id);
@@ -1398,7 +1569,14 @@ function addEntry(id){
   // update today panel
   renderTodayPanel();
 }
-function deleteEntry(id,idx){getMonthData().entries[id].splice(idx,1);saveData();render();renderTodayPanel();}
+function deleteEntry(id,idx){
+  const d=getMonthData();
+  const entry=d.entries[id]?.[idx];
+  const cat=getCats().find(c=>c.id===id);
+  if(entry) logActivity('del',`removed ${fmt(entry.amount)} from ${cat?.icon||''} ${cat?.name||id} — "${entry.desc||'Expense'}"`);
+  d.entries[id].splice(idx,1);
+  saveData();render();renderTodayPanel();
+}
 
 /* ══════════════════════════════════
    TODAY PANEL (#3)
@@ -1421,7 +1599,11 @@ function renderTodayPanel(){
     list.innerHTML='<div class="today-empty">No entries today yet.<br>Start logging! 📝</div>';
     totalRow.innerHTML='';return;
   }
-  list.innerHTML=entries.map(e=>`<div class="today-entry"><span class="today-entry-icon">${e.icon}</span><div class="today-entry-body"><div class="today-entry-cat">${e.catName}</div><div class="today-entry-desc">${e.desc}</div></div><span class="today-entry-amt">${fmt(e.amount)}</span></div>`).join('');
+  list.innerHTML=entries.map(e=>{
+    const initials=e.user?e.user.slice(0,2).toUpperCase():'';
+    const avatarHtml=e.user?`<span class="eavatar" style="background:${e.userColor||'#888'};color:#0f0f0f;width:20px;height:20px;font-size:9px;margin-top:2px;flex-shrink:0;" title="${e.user}">${initials}</span>`:'';
+    return`<div class="today-entry">${avatarHtml}<span class="today-entry-icon">${e.icon}</span><div class="today-entry-body"><div class="today-entry-cat">${e.catName}</div><div class="today-entry-desc">${e.desc}</div></div><span class="today-entry-amt">${fmt(e.amount)}</span></div>`;
+  }).join('');
   const total=entries.reduce((s,e)=>s+e.amount,0);
   totalRow.innerHTML=`<div class="today-total"><span class="today-total-label">Today's total</span><span class="today-total-val">${fmt(total)}</span></div>`;
   // mirror to mobile today panel
@@ -1452,7 +1634,7 @@ function renderBudgetSetup(){
       delete appData.catNames[c.id];delete appData.catIcons[c.id];
       Object.keys(appData.months).forEach(k=>{delete appData.months[k].budgets[c.id];delete appData.months[k].entries[c.id];});
       if(appData.catOrder)appData.catOrder=appData.catOrder.filter(id=>id!==c.id);
-      saveData();renderBudgetSetup();showToast('Category removed');
+      saveData('meta');saveData('month');renderBudgetSetup();showToast('Category removed');
     });
   });
   const addBtn=document.createElement('button');addBtn.className='add-cat-btn';addBtn.textContent='＋ Add new category';
@@ -1471,14 +1653,21 @@ function renderBudgetSetup(){
 }
 function saveBudgets(){
   const d=getMonthData(),cats=getCats();
+  const changes=[];
   cats.forEach(c=>{
     const n=document.getElementById('sname-'+c.id)?.value.trim();
+    const oldBud=d.budgets[c.id]||0;
+    const newBud=parseFloat(document.getElementById('bud-'+c.id)?.value)||0;
+    if(n&&n!==c.name) changes.push(`renamed "${c.name}" → "${n}"`);
+    if(newBud!==oldBud) changes.push(`${c.icon} ${n||c.name} budget ${fmt(oldBud)} → ${fmt(newBud)}`);
     if(n)appData.catNames[c.id]=n;
-    d.budgets[c.id]=parseFloat(document.getElementById('bud-'+c.id)?.value)||0;
-    // ensure all months have this category
+    d.budgets[c.id]=newBud;
     Object.keys(appData.months).forEach(k=>{if(!appData.months[k].entries[c.id])appData.months[k].entries[c.id]=[];if(appData.months[k].budgets[c.id]===undefined)appData.months[k].budgets[c.id]=0;});
   });
-  saveData();showToast('Saved!');setTab('overview');
+  if(changes.length) logActivity('edit',`updated budgets: ${changes.slice(0,3).join(', ')}${changes.length>3?' +more':''}`);
+  saveData('meta');   // catNames, catIcons, catOrder
+  saveData('month');  // current month budgets
+  showToast('Saved!');setTab('overview');
 }
 
 /* ══════════════════════════════════
@@ -1650,7 +1839,148 @@ document.getElementById('guideClose').addEventListener('click',()=>document.getE
 document.getElementById('guideOverlay').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
 
 /* ══════════════════════════════════
-   INIT
+   USER IDENTITY & ACTIVITY LOG
+══════════════════════════════════ */
+const AVATAR_COLORS = ['#c8f060','#f06090','#60c0f0','#f0a050','#a060f0','#60f0a0','#f0e060','#f09060'];
+let currentUser = JSON.parse(localStorage.getItem('dc_user') || 'null');
+let activityLog = []; // loaded from Firestore
+let activityUnread = 0;
+
+function userColor(name) {
+  if (!name) return '#888';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function userInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  return parts.length > 1 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+}
+function renderUserAvatar(el, name) {
+  if (!el) return;
+  el.style.background = userColor(name);
+  el.style.color = '#0f0f0f';
+  el.textContent = userInitials(name);
+}
+
+/* ── identity modal ── */
+function showUserIdentityModal() {
+  const overlay = document.getElementById('userIdentityOverlay');
+  const input = document.getElementById('userNameInput');
+  const preview = document.getElementById('identityAvatarPreview');
+  input.value = currentUser?.name || '';
+  renderUserAvatar(preview, input.value || '?');
+  input.addEventListener('input', () => renderUserAvatar(preview, input.value || '?'));
+  overlay.classList.add('open');
+  setTimeout(() => input.focus(), 100);
+}
+document.getElementById('userSaveBtn').addEventListener('click', () => {
+  const name = document.getElementById('userNameInput').value.trim();
+  if (!name) { showToast('Please enter your name'); return; }
+  currentUser = { name, color: userColor(name) };
+  localStorage.setItem('dc_user', JSON.stringify(currentUser));
+  document.getElementById('userIdentityOverlay').classList.remove('open');
+  updatePanelUser();
+  showToast('Welcome, ' + name + '! 👋');
+});
+document.getElementById('userNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('userSaveBtn').click(); });
+document.getElementById('changeUserBtn').addEventListener('click', showUserIdentityModal);
+
+function updatePanelUser() {
+  renderUserAvatar(document.getElementById('panelUserAvatar'), currentUser?.name || '?');
+  document.getElementById('panelUserName').textContent = currentUser?.name || 'Anonymous';
+}
+
+/* ── activity panel ── */
+const actBtn = document.getElementById('activityBtn');
+const actPanel = document.getElementById('activityPanel');
+const actBg = document.getElementById('activityOverlayBg');
+actBtn.addEventListener('click', e => { e.stopPropagation(); toggleActivityPanel(); });
+document.getElementById('activityClose').addEventListener('click', closeActivityPanel);
+actBg.addEventListener('click', closeActivityPanel);
+
+function toggleActivityPanel() {
+  const open = actPanel.classList.toggle('open');
+  actBg.classList.toggle('open', open);
+  if (open) { activityUnread = 0; document.getElementById('activityBadge').classList.remove('show'); renderActivityList(); }
+}
+function closeActivityPanel() { actPanel.classList.remove('open'); actBg.classList.remove('open'); }
+
+/* ── log an action ── */
+async function logActivity(type, description) {
+  if (!db) return;
+  const event = {
+    type,
+    description,
+    user: currentUser?.name || 'Anonymous',
+    color: userColor(currentUser?.name || ''),
+    ts: Date.now(),
+  };
+  activityLog.unshift(event);
+  if (activityLog.length > 100) activityLog = activityLog.slice(0, 100);
+  // write as individual doc in /activity subcollection (no size limit risk)
+  try {
+    await db._addDoc(db._collection(db,'activity'), event);
+  } catch(e) { console.warn('Activity log save failed', e); }
+  // badge if panel is closed
+  if (!actPanel.classList.contains('open')) {
+    activityUnread++;
+    document.getElementById('activityBadge').classList.add('show');
+  } else {
+    renderActivityList();
+  }
+}
+
+async function loadActivityLog() {
+  if (!db) return;
+  try {
+    const q = db._query(db._collection(db,'activity'), db._orderBy('ts','desc'), db._limit(100));
+    const snap = await db._getDocs(q);
+    activityLog = [];
+    snap.forEach(d => activityLog.push(d.data()));
+  } catch(e) { console.warn('Activity log load failed', e); }
+}
+
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  const d = new Date(ts);
+  return d.toLocaleDateString('default', { month:'short', day:'numeric' });
+}
+
+function renderActivityList() {
+  const el = document.getElementById('activityList');
+  if (!activityLog.length) {
+    el.innerHTML = '<div class="activity-empty">No activity yet.<br>Actions will appear here once you start tracking.</div>';
+    return;
+  }
+  el.innerHTML = activityLog.map(e => `
+    <div class="activity-item">
+      <div class="activity-item-avatar" style="background:${e.color};color:#0f0f0f;">${userInitials(e.user)}</div>
+      <div class="activity-item-body">
+        <div class="activity-item-text"><strong>${e.user}</strong> ${e.description}</div>
+        <div class="activity-item-meta">
+          <span class="activity-item-type ${e.type}">${e.type.toUpperCase()}</span>
+          <span>${timeAgo(e.ts)}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── init user on first load ── */
+function initUser() {
+  if (!currentUser) {
+    showUserIdentityModal();
+  } else {
+    updatePanelUser();
+  }
+}
+
+/* ══════════════════════════════════
+   WIRED loadData / INIT
 ══════════════════════════════════ */
 applyTheme(themeSettings);
 buildThemePanel();
