@@ -1235,43 +1235,59 @@ async function loadData(){
   try{
     await initFirebase();
 
-    // ── load meta (catNames, catIcons, catOrder) ──
+    // ── load meta (catNames, catIcons, catOrder, deletedMonths) ──
     const metaSnap=await db._getDoc(db._doc(db,'shared','meta'));
     if(metaSnap.exists()){
       const m=metaSnap.data();
       appData.catNames=m.catNames||{};
       appData.catIcons=m.catIcons||{};
       appData.catOrder=m.catOrder||null;
+      appData.deletedMonths=m.deletedMonths||[];
     }
 
     // ── load all month docs from /months subcollection ──
     const monthsSnap=await db._getDocs(db._collection(db,'months'));
     monthsSnap.forEach(d=>{
-      const key=d.id; // e.g. "2026-04"
+      const key=d.id;
+      // skip any month that was explicitly deleted
+      if((appData.deletedMonths||[]).includes(key))return;
       const data=d.data();
       appData.months[key]={budgets:data.budgets||{},entries:data.entries||{}};
     });
 
-    // ── migrate old single-doc format if present ──
-    if(!monthsSnap.size){
+    // ── migrate old single-doc format if present AND not yet migrated ──
+    const alreadyMigrated=metaSnap.exists()&&metaSnap.data()._migrated;
+    if(!alreadyMigrated){
       const oldSnap=await db._getDoc(db._doc(db,'shared',STORAGE_KEY));
       if(oldSnap.exists()){
         const p=oldSnap.data().payload;
-        const old=p.months?p:p;
-        if(old.catNames)appData.catNames=old.catNames;
-        if(old.catIcons)appData.catIcons=old.catIcons;
-        if(old.catOrder)appData.catOrder=old.catOrder;
-        const oldMonths=old.months||old;
-        // migrate each month to its own doc
+        const old=p&&p.months?p:p;
+        if(old&&old.catNames)appData.catNames=old.catNames;
+        if(old&&old.catIcons)appData.catIcons=old.catIcons;
+        if(old&&old.catOrder)appData.catOrder=old.catOrder;
+        const oldMonths=(old&&old.months)||{};
+        const deleted=appData.deletedMonths||[];
         for(const[k,v] of Object.entries(oldMonths)){
-          if(typeof v==='object'&&v.budgets){
+          if(typeof v==='object'&&v.budgets&&!deleted.includes(k)){
             appData.months[k]=v;
-            await db._setDoc(db._doc(db,'months',k),v);
+            await db._setDoc(db._doc(db,'months',k),{budgets:v.budgets,entries:v.entries});
           }
         }
-        // save meta
-        await db._setDoc(db._doc(db,'shared','meta'),{catNames:appData.catNames,catIcons:appData.catIcons,catOrder:appData.catOrder});
-        showToast('Data migrated to new storage ✓');
+        // mark migration done and delete old doc so it never runs again
+        await db._setDoc(db._doc(db,'shared','meta'),{
+          catNames:appData.catNames,catIcons:appData.catIcons,
+          catOrder:appData.catOrder,deletedMonths:appData.deletedMonths||[],
+          _migrated:true
+        });
+        await db._deleteDoc(db._doc(db,'shared',STORAGE_KEY));
+        showToast('Data migrated ✓');
+      } else {
+        // no old data — just mark as migrated so we never check again
+        await db._setDoc(db._doc(db,'shared','meta'),{
+          catNames:appData.catNames||{},catIcons:appData.catIcons||{},
+          catOrder:appData.catOrder||null,deletedMonths:appData.deletedMonths||[],
+          _migrated:true
+        });
       }
     }
 
@@ -1280,8 +1296,16 @@ async function loadData(){
   if(!appData.catNames)appData.catNames={};
   if(!appData.catIcons)appData.catIcons={};
   if(!appData.months)appData.months={};
-  ensureMonth(todayKey());
-  currentMonth=todayKey();
+  if(!appData.deletedMonths)appData.deletedMonths=[];
+
+  // only create today's month if it hasn't been explicitly deleted
+  const todayK=todayKey();
+  if(!appData.deletedMonths.includes(todayK)){
+    ensureMonth(todayK);
+  }
+  // set currentMonth to today if it exists, otherwise most recent
+  currentMonth=appData.months[todayK]?todayK:(Object.keys(appData.months).sort().reverse()[0]||todayK);
+
   setSyncStatus('synced');
   await loadActivityLog();
   renderQuote();
@@ -1363,15 +1387,23 @@ function deleteMonth(k){
   document.getElementById('deleteModalConfirm').onclick=async()=>{
     const label=monthLabel(k);
     const confirmBtn=document.getElementById('deleteModalConfirm');
-    confirmBtn.disabled=true;
-    confirmBtn.textContent='Deleting...';
-    // delete from Firestore FIRST — confirm it's gone before touching local state
+    confirmBtn.disabled=true;confirmBtn.textContent='Deleting...';
+    // 1. Delete the Firestore doc first
     const ok=await deleteMonthFromFirestore(k);
     if(!ok){
       showToast('Could not delete — check connection');
       confirmBtn.disabled=false;confirmBtn.textContent='Delete';
       return;
     }
+    // 2. Record it as deleted in meta so loadData never recreates it
+    if(!appData.deletedMonths)appData.deletedMonths=[];
+    if(!appData.deletedMonths.includes(k))appData.deletedMonths.push(k);
+    await db._setDoc(db._doc(db,'shared','meta'),{
+      catNames:appData.catNames,catIcons:appData.catIcons,
+      catOrder:appData.catOrder||null,deletedMonths:appData.deletedMonths,
+      _migrated:true
+    });
+    // 3. Remove from local state
     delete appData.months[k];
     if(currentMonth===k)currentMonth=Object.keys(appData.months).sort().reverse()[0];
     confirmBtn.disabled=false;confirmBtn.textContent='Delete';
