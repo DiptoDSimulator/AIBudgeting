@@ -533,10 +533,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
       <!-- AI ADVISOR -->
       <div id="view-ai" style="display:none;">
-        <div class="ai-panel">
+        <!-- API key setup card -->
+        <div class="ai-panel" id="aiSetupCard">
+          <div class="ai-panel-header">
+            <span class="ai-badge">SETUP REQUIRED</span>
+            <span style="font-size:12px;color:var(--muted);">One-time step</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;">
+            The AI Advisor uses <strong style="color:var(--text);">Groq</strong> — a free AI API that works outside Claude.<br>
+            Get a free key in 30 seconds:
+            <ol style="margin:.5rem 0 0 1.2rem;display:flex;flex-direction:column;gap:4px;">
+              <li>Go to <strong style="color:var(--accent);">console.groq.com</strong> → sign up free</li>
+              <li>Click <strong style="color:var(--text);">API Keys → Create API Key</strong></li>
+              <li>Paste it below — stored only on your device</li>
+            </ol>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="password" class="finput" id="groqKeyInput" placeholder="gsk_..." style="flex:1;font-family:monospace;"/>
+            <button class="fsub" id="groqKeySaveBtn">Save</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">Key is saved to your browser only — never sent to anyone except Groq.</div>
+        </div>
+        <!-- AI suggestions panel -->
+        <div class="ai-panel" id="aiMainPanel" style="display:none;">
           <div class="ai-panel-header">
             <span class="ai-badge">AI ADVISOR</span>
-            <span style="font-size:12px;color:var(--muted);">Powered by Claude</span>
+            <span style="font-size:12px;color:var(--muted);">Powered by Llama 3 via Groq</span>
+            <button style="margin-left:auto;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;" id="aiResetKeyBtn">Change key</button>
           </div>
           <div class="ai-content" id="aiContent">
             <span style="color:var(--muted);">Click the button below to get personalised financial advice based on your spending data.</span>
@@ -1444,6 +1467,7 @@ function setTab(tab){
     document.getElementById('view-'+t).style.display=t===tab?'':'none';
     document.getElementById('tab-'+t).className='tbtn'+(t===tab?' active':'');
   });
+  if(tab==='ai')initAITab();
   render();
 }
 ['overview','budget','history','insights','ai'].forEach(t=>document.getElementById('tab-'+t).addEventListener('click',()=>setTab(t)));
@@ -1821,47 +1845,111 @@ function renderInsights(){
 /* ══════════════════════════════════
    AI ADVISOR (#9)
 ══════════════════════════════════ */
+/* ══════════════════════════════════
+   AI ADVISOR — Groq (works everywhere)
+══════════════════════════════════ */
+function initAITab(){
+  const key=localStorage.getItem('dc_groq_key');
+  document.getElementById('aiSetupCard').style.display=key?'none':'block';
+  document.getElementById('aiMainPanel').style.display=key?'block':'none';
+  if(key)document.getElementById('groqKeyInput').value=key;
+}
+
+document.getElementById('groqKeySaveBtn').addEventListener('click',()=>{
+  const key=document.getElementById('groqKeyInput').value.trim();
+  if(!key||!key.startsWith('gsk_')){showToast('Paste a valid Groq key (starts with gsk_)');return;}
+  localStorage.setItem('dc_groq_key',key);
+  document.getElementById('aiSetupCard').style.display='none';
+  document.getElementById('aiMainPanel').style.display='block';
+  showToast('API key saved ✓');
+});
+
+document.getElementById('aiResetKeyBtn').addEventListener('click',()=>{
+  localStorage.removeItem('dc_groq_key');
+  document.getElementById('aiSetupCard').style.display='block';
+  document.getElementById('aiMainPanel').style.display='none';
+  document.getElementById('aiGoalPanel').style.display='none';
+  document.getElementById('groqKeyInput').value='';
+});
+
 document.getElementById('aiBtn').addEventListener('click',()=>fetchAISuggestions());
 document.getElementById('aiCustomBtn').addEventListener('click',()=>{
   const q=document.getElementById('aiCustomQ').value.trim();
   if(q)fetchAISuggestions(q);
 });
-document.getElementById('aiCustomQ').addEventListener('keydown',e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(q)fetchAISuggestions(q);}});
+document.getElementById('aiCustomQ').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const q=e.target.value.trim();if(q)fetchAISuggestions(q);}
+});
 
 async function fetchAISuggestions(customQ=null){
+  const key=localStorage.getItem('dc_groq_key');
+  if(!key){showToast('Add your Groq API key first');return;}
   const btn=document.getElementById('aiBtn');
   const contentEl=document.getElementById('aiContent');
   const goalPanel=document.getElementById('aiGoalPanel');
   btn.disabled=true;
   contentEl.innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
-  // build summary for claude
-  const cats=getCats();
-  const allMonths=Object.keys(appData.months).sort();
-  const summary={currency:CURRENCIES[currency].name,months:{}};
+
+  // build compact data summary
+  const cats=getCats().filter(c=>c.id!=='savings'&&c.name.toLowerCase()!=='savings');
+  const allMonths=Object.keys(appData.months).sort().slice(-6); // last 6 months for conciseness
+  const summary={currency:CURRENCIES[currency].name,totalSaved:Math.round(cumulativeSavings()),months:{}};
   allMonths.forEach(k=>{
     const d=appData.months[k];
     summary.months[monthLabel(k)]={budgets:{},spent:{},over:[]};
     cats.forEach(c=>{
       const bud=d.budgets[c.id]||0;
       const sp=(d.entries[c.id]||[]).reduce((a,e)=>a+e.amount,0);
-      summary.months[monthLabel(k)].budgets[c.name]=bud;
-      summary.months[monthLabel(k)].spent[c.name]=sp;
+      if(bud>0)summary.months[monthLabel(k)].budgets[c.name]=bud;
+      if(sp>0)summary.months[monthLabel(k)].spent[c.name]=sp;
       if(bud>0&&sp>bud)summary.months[monthLabel(k)].over.push(c.name);
     });
   });
-  const totalSaved=cumulativeSavings();
-  const prompt=customQ
-    ?`Here is our budget data: ${JSON.stringify(summary)}. Our total savings so far: ${fmt(totalSaved)}. Question: ${customQ}. Please give a concise, friendly, specific answer in 3-5 sentences.`
-    :`Here is our household budget data for a couple: ${JSON.stringify(summary)}. Total cumulative savings: ${fmt(totalSaved)}. Please give us 4-5 specific, actionable, friendly suggestions to improve our financial habits based on this data. Focus on patterns you notice. Format as a short intro sentence then a bullet list. Keep it warm and encouraging — this is a couple tracking together.`;
+
+  const systemPrompt=`You are a friendly personal finance advisor for a couple tracking their shared budget. Be warm, specific, and encouraging. Keep responses concise — 4-6 sentences max or a short bullet list. Always refer to them as "you two" or "you both". Currency: ${CURRENCIES[currency].name}.`;
+  const userPrompt=customQ
+    ?`Our budget data (last 6 months): ${JSON.stringify(summary)}. Question: ${customQ}`
+    :`Our budget data (last 6 months): ${JSON.stringify(summary)}. Give us 4-5 specific, actionable suggestions to improve our spending habits. Start with one encouraging sentence, then bullet points. Focus on patterns you notice.`;
+
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'llama3-8b-8192',
+        max_tokens:500,
+        messages:[
+          {role:'system',content:systemPrompt},
+          {role:'user',content:userPrompt}
+        ]
+      })
+    });
+    if(!res.ok){
+      const err=await res.json();
+      const msg=err?.error?.message||'API error';
+      if(res.status===401){
+        contentEl.innerHTML='<span style="color:var(--danger);">Invalid API key. Please update it.</span>';
+        localStorage.removeItem('dc_groq_key');
+        setTimeout(()=>initAITab(),1500);
+      } else {
+        contentEl.innerHTML=`<span style="color:var(--muted);">${msg}</span>`;
+      }
+      btn.disabled=false;return;
+    }
     const data=await res.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'No suggestions available.';
-    // convert markdown bullet points to HTML
-    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^[-•]\s(.+)/gm,'<li>$1</li>').replace(/(<li>.*<\/li>)/s,'<ul>$1</ul>');
+    const text=data.choices?.[0]?.message?.content||'No suggestions available.';
+    // render markdown-ish formatting
+    const html=text
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/^[-•*]\s(.+)/gm,'<li>$1</li>')
+      .replace(/(<li>[\s\S]*<\/li>)/m,'<ul style="padding-left:1.2rem;margin-top:.4rem;display:flex;flex-direction:column;gap:4px;">$1</ul>')
+      .replace(/\n\n/g,'<br><br>');
     contentEl.innerHTML=html;
     goalPanel.style.display='block';
-  }catch(e){contentEl.innerHTML='<span style="color:var(--muted);">Could not reach AI — check your connection.</span>';}
+  }catch(e){
+    contentEl.innerHTML='<span style="color:var(--muted);">Could not reach AI — check your internet connection.</span>';
+  }
   btn.disabled=false;
 }
 
